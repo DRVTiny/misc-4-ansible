@@ -1,0 +1,37 @@
+- name: install joe on RedHat-based
+  yum:
+    name: joe
+    state: latest
+  become: true
+  when: ansible_os_family == "RedHat"
+- name: install joe on Debian-based
+  apt:
+    name: joe
+    state: latest
+  become: true
+  when: ansible_os_family == "Debian"  
+- name: check whether joe already configured to support crystal language
+  command: bash -c 'fgrep -q crystal /etc/joe/ftyperc; echo $?'
+  changed_when: false
+  register: fl_need_upd_joe
+- name: configure crystal language support in ftyperc 
+  blockinfile:
+    path: /etc/joe/ftyperc
+    marker: " {mark} ANSIBLE MANAGED BLOCK"
+    insertbefore: " Ruby"
+    block: |4
+         Crystal
+        [crystal]
+        *.cr
+        -autoindent
+        -title
+        -pound_comment
+        -syntax ruby
+        -text_delimiters if=elsif=else=end:do=end:class=end:def=end:begin=rescue=end:class=end
+        -indentfirst
+        -indentc 32
+        -tab 2
+        -spaces
+        -highlighter_context
+  become: true
+  when: fl_need_upd_joe.stdout == "1"
